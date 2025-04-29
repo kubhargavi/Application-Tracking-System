@@ -1,5 +1,5 @@
 
-# 📄 Smart ATS - Resume Evaluator
+# Application Tracking System 
 
 ---
 
