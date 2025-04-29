@@ -5,49 +5,65 @@ import PyPDF2 as pdf
 from dotenv import load_dotenv
 import json
 
-load_dotenv() # to load all our environment variables
+# Load environment variables
+load_dotenv()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY")) #api key
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-def get_gemini_repsonse(input):
-    model=genai.GenerativeModel('gemini-pro')
-    response=model.generate_content(input)
+# Function to get Gemini model response
+def get_gemini_response(input_text):
+    model = genai.GenerativeModel('models/gemini-1.5-pro')
+    response = model.generate_content(input_text)
     return response.text
 
+# Function to read uploaded PDF file
 def input_pdf_text(uploaded_file):
-    reader=pdf.PdfReader(uploaded_file)
-    text=""
-    for page in range(len(reader.pages)):
-        page=reader.pages[page]
-        text+=str(page.extract_text())
+    reader = pdf.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += str(page.extract_text())
     return text
 
-#prompt
-input_prompt="""
-Hey Act Like a skilled or very experience ATS(Application Tracking System)
-with a deep understanding of tech field,software engineering,data science,data analyst, Full stack Engineer, Backend Engineer, Frontend Engineer
-DevOps Engineer, Machine Learning Engineer and big data engineer. Your task is to evaluate the resume based on the given job description.
-You must consider the job market is very very competitive and you should provide 
-best assistance for improving the resumes. Assign the percentage Matching based 
-on Jd and
-the missing keywords with high accuracy
-resume:{text}
-description:{jd}
+# Prompt Template
+input_prompt_template = """
+Hey Act Like a skilled or very experienced ATS (Application Tracking System)
+with a deep understanding of tech fields: software engineering, data science, data analysis, full stack engineering, backend engineering, frontend engineering,
+DevOps engineering, machine learning engineering, and big data engineering. Your task is to evaluate the resume based on the given job description.
 
-I want the response in one single string having the structure
-{{"JD Match":"%","MissingKeywords:[]","Profile Summary":""}}
+You must consider that the job market is very competitive and you should provide the best assistance for improving the resumes. Assign a percentage match
+based on the JD and list the missing keywords with high accuracy.
+
+Resume: {resume_text}
+Job Description: {job_description}
+
+I want the response in one single string having the structure:
+{{"JD Match":"%","MissingKeywords":[],"Profile Summary":""}}
 """
 
-# streamlit app
-st.title("Smart ATS")
-st.text("Improve Your Resume ATS")
-jd=st.text_area("Paste the Job Description")
-uploaded_file=st.file_uploader("Upload Your Resume",type="pdf",help="Please uplaod the pdf")
+# Streamlit App
+st.title("📝 Smart ATS - Resume Evaluator")
+st.text("Improve your resume with ATS insights!")
+
+# Input fields
+job_description = st.text_area("Paste the Job Description here:")
+uploaded_file = st.file_uploader("Upload Your Resume (PDF format only)", type="pdf", help="Please upload a PDF file.")
 
 submit = st.button("Submit")
 
 if submit:
-    if uploaded_file is not None:
-        text=input_pdf_text(uploaded_file)
-        response=get_gemini_repsonse(input_prompt)
-        st.subheader(response)
+    if uploaded_file is not None and job_description.strip() != "":
+        resume_text = input_pdf_text(uploaded_file)
+        
+        # Fill the input prompt
+        input_prompt = input_prompt_template.format(resume_text=resume_text, job_description=job_description)
+        
+        # Get response from Gemini
+        try:
+            output = get_gemini_response(input_prompt)
+            st.subheader("📄 ATS Evaluation Result")
+            st.write(output)
+        except Exception as e:
+            st.error(f"Error generating response: {e}")
+    else:
+        st.warning("⚠️ Please upload a resume and enter a job description before submitting.")
