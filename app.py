@@ -42,7 +42,7 @@ I want the response in one single string having the structure:
 """
 
 # Streamlit App
-st.title("📝 Smart ATS - Resume Evaluator")
+st.title("📝 Application Tracking System")
 st.text("Improve your resume with ATS insights!")
 
 # Input fields
